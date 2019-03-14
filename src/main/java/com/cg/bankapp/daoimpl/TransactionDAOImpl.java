@@ -14,6 +14,8 @@ import com.cg.bankapp.dao.TransactionsDAO;
 import com.cg.bankapp.driver.Main;
 import com.cg.bankapp.model.CustomerDetails;
 import com.cg.bankapp.model.TransactionDetails;
+import com.cg.bankapp.service.TransactionsService;
+import com.cg.bankapp.serviceimpl.TransactionServiceImpl;
 
 public class TransactionDAOImpl implements TransactionsDAO {
 
@@ -21,16 +23,13 @@ public class TransactionDAOImpl implements TransactionsDAO {
 
 	public long withdraw(long accountNo, long amount) {
 		// TODO Auto-generated method stub
-		 CustomerDetails c=new CustomerDetails();
-		 TransactionDetails transactionDetails=new TransactionDetails();
+		// CustomerDetails c=new CustomerDetails();
+		 long bal=0;
 	       try {
 	    	   Class.forName("oracle.jdbc.driver.OracleDriver");
-				Connection connection= DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521/xe","supermarket","oracle123");
-			
-			Statement st = connection.createStatement();
-			
+				Connection connection= DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521/xe","supermarket","oracle123");			
+			Statement st = connection.createStatement();			
 			ResultSet resultSet = st.executeQuery("select * from customer_details");
-			long bal=0;
 			while(resultSet.next())
 			{
 				if(accountNo==resultSet.getLong(1))
@@ -39,35 +38,19 @@ public class TransactionDAOImpl implements TransactionsDAO {
 					// System.out.println(bal+"here");
 				}
 			}
-			
-			
-			
+		
 			if(amount>bal)
 			{
-				t
+				bal=-1;
 			}
 			else
 			{
-				bal = bal - amt;
-				System.out.println("updated balance "+" "+ bal);
-			}
-			
-			
-
-			PreparedStatement preparedStatement = connection.prepareStatement("update customerDetails set balance=? where accountNo=?");
-			
-			preparedStatement.setLong(1, bal);
-			preparedStatement.setLong(2, customer.getAccountNo());
-			
-			
-			 int i = preparedStatement.executeUpdate();
-			 
-			 if (i==1) {
-					System.out.println("done");
-				} else {
-		          System.out.println("error");
-				}
-					
+				bal = bal - amount;
+				PreparedStatement preparedStatement = connection.prepareStatement("update customer_details set balance=? where account_no=?");		
+				preparedStatement.setLong(1, bal);
+				preparedStatement.setLong(2, accountNo);
+				preparedStatement.executeUpdate();
+			}			
 				connection.close();
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -76,45 +59,36 @@ public class TransactionDAOImpl implements TransactionsDAO {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return 0;
+		return bal;
 	}
 
 	
 	
 
-	public long deposit(long accountNo, long balance) {
+	public long deposit(long accountNo, long amount) {
 		// TODO Auto-generated method stub
-				Scanner sc = new Scanner(System.in);
-				System.out.println("Enter amount");
-				long amount = sc.nextLong();
 				long bal=0;
 				 try {
-						Class.forName("com.mysql.cj.jdbc.Driver");
-						Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/Bank", "root", "root");
-						
+					 	Class.forName("oracle.jdbc.driver.OracleDriver");
+						Connection connection= DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521/xe","supermarket","oracle123");			
+					
 						Statement st = connection.createStatement();
 						
-						ResultSet resultSet = st.executeQuery("select * from customerDetails");
+						ResultSet resultSet = st.executeQuery("select * from customer_details order by account_no");
 						while(resultSet.next())
 						{
-							if(customer.getAccountNo()==resultSet.getLong(4))
+							if(accountNo==resultSet.getLong(1))
 							{
-								bal = resultSet.getLong(9);
+								bal = resultSet.getLong(10);
 							}
 						}
 						bal = bal+amount;
-						//System.out.println("money added");
-						PreparedStatement preparedStatement = connection.prepareStatement("update customerDetails set balance=? where accountNo=?");
+						PreparedStatement preparedStatement = connection.prepareStatement("update customer_details set balance=? where account_no=?");
 						
 						preparedStatement.setLong(1, bal);
-						preparedStatement.setLong(2, customer.getAccountNo());
-						int i = preparedStatement.executeUpdate();
+						preparedStatement.setLong(2, accountNo);
+						preparedStatement.executeUpdate();
 						
-						if (i==1) {
-							System.out.println("Money added");
-						} else {
-				          System.out.println("Error");
-						}
 						connection.close();
 					} catch (ClassNotFoundException e) {
 						// TODO Auto-generated catch block
@@ -123,12 +97,40 @@ public class TransactionDAOImpl implements TransactionsDAO {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-		return 0;
+		return bal;
 	}
 
-	public TransactionDetails fundTransfer(TransactionDetails transactionDetails) {
-		// TODO Auto-generated method stub
-		return null;
+	public long fundTransfer(TransactionDetails transactionDetails) {
+
+	
+		try {
+		 	Class.forName("oracle.jdbc.driver.OracleDriver");
+			Connection connection= DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521/xe","supermarket","oracle123");			
+			TransactionsService transactionsService=new TransactionServiceImpl();
+			if(transactionsService.withdraw(transactionDetails.getFromAccountNo(),transactionDetails.getAmount_transfered())>0) {
+				transactionsService.deposit(transactionDetails.getToAccountNo(), transactionDetails.getAmount_transfered());
+				PreparedStatement preparedStatement = connection.prepareStatement("insert into transaction_details values(transaction_details_seq.nextval,?,?,?)");			
+				preparedStatement.setLong(1, transactionDetails.getFromAccountNo());
+				preparedStatement.setLong(2, transactionDetails.getToAccountNo());
+				preparedStatement.setLong(3, transactionDetails.getAmount_transfered());
+				preparedStatement.executeUpdate();
+				
+				Statement st = connection.createStatement();
+				ResultSet resultSet = st.executeQuery("select * from transaction_details");
+				while(resultSet.next())
+				{
+					transactionDetails.setTransactionId(resultSet.getLong(1));
+				}
+			
+			}
+		}catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return transactionDetails.getTransactionId();
 	}
      
 }

@@ -25,21 +25,23 @@ public class RegisterDAOImpl implements RegisterDAO {
 			Connection connection= DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521/xe","supermarket","oracle123");
 			Statement st = connection.createStatement();
 
-			ResultSet resultSet = st.executeQuery("select * from customer_details");
-			// To get the number of rows present in table
-			ResultSet resultSet2=st.executeQuery("select count(*) from customer_details");
+			ResultSet resultSet = st.executeQuery("select * from customer_details order by account_no");
+			
 			while (resultSet.next()) {
-				if (aadharNo.equals(resultSet.getLong(7))) {
+				if (aadharNo.equals(resultSet.getString(7))) {
 					check=false;
+					break;
 				} else {
 					// This temp size will be size of the table if Aadhar does not exist
 					temp++;
 				}
 			}
-			resultSet2.next();// To get the value
+			ResultSet resultSet2=st.executeQuery("select count(*) from customer_details");
+			resultSet2.next();
 			if(temp==resultSet2.getInt(1)) {
 				check=true;
 			}
+			connection.close();
 			
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -77,7 +79,7 @@ public class RegisterDAOImpl implements RegisterDAO {
 				
 				Statement st = connection.createStatement();
 
-				ResultSet resultSet = st.executeQuery("select * from customer_details");
+				ResultSet resultSet = st.executeQuery("select * from customer_details order by account_no");
 				while (resultSet.next()) {
 					customer.setAccountNo(resultSet.getLong(1));
 				}

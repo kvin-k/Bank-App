@@ -37,7 +37,15 @@ public class RegisterServiceImpl implements RegisterService {
 		return check;
 
 	}
-
+	
+	public boolean validateNumber(String mobile) {
+		if(mobile.length()==10) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
 	
 
 }

@@ -7,6 +7,6 @@ public interface TransactionsService {
 
 	long withdraw(long accountNo,long amount);
 	long deposit(long accountNo,long amount);
-	public TransactionDetails fundTransfer(TransactionDetails transactionDetails);
+	public long fundTransfer(TransactionDetails transactionDetails);
 	
 }
